@@ -6,6 +6,7 @@ export const LoginSchema = z.object({
   password: z.string().min(6, {
     message: "Password must be at least 6 characters",
   }),
+  code:z.string().optional(),
 });
 export const ResetSchema = z.object({
   email: z.string().email({

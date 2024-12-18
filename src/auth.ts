@@ -5,6 +5,7 @@ import authConfig from "./auth.config";
 import { prisma } from "./lib/db";
 import { getUserById } from "./app/data/user";
 import { UserRole } from "@prisma/client";
+import { getTwoFactorConfirmationByUserId } from "./app/data/two-factor-confirmation";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   pages: {
@@ -27,13 +28,26 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (account?.provider !== "credentials") return true;
       const existingUser = await getUserById(user.id as string);
       if (!existingUser?.emailVerified) return false;
+      if (!existingUser.isTowFacorEnabled) {
+        const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
+          existingUser.id
+        );
+        if (!twoFactorConfirmation) return false;
+        // Delete two factor confirmatio for next sign in
+        await prisma.twoFactorConfirmation.delete({
+          where: {
+            id: twoFactorConfirmation.id,
+          },
+        });
+      }
+
       return true;
     },
     async session({ token, session }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
-      /**Personnalise les données de la session utilisateur. Ajoute les champs id et role à session.user, en se basant sur les informations du jeton JWT. */
+      /**Personnalise les données de la session utilisateur. Ajoute leSs champs id et role à session.user, en se basant sur les informations du jeton JWT. */
       if (token.role && session.user) {
         session.user.role = token.role as UserRole;
       }
