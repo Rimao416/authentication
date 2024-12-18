@@ -12,6 +12,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     error: "/auth/error",
   },
   events: {
+    /**linkAccount : Lorsqu’un compte est lié à un fournisseur (comme Google), l'utilisateur est mis à jour dans la base de données pour confirmer son email : */
     async linkAccount({ user }) {
       await prisma.user.update({
         where: { id: user.id },
@@ -19,9 +20,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       });
     },
   },
-
+  /** Les callbacks personnalisent le comportement de NextAuth à divers moments du cycle de vie de l'authentification.*/
   callbacks: {
     async signIn({ user, account }) {
+      /* Vérifie si l'utilisateur a vérifié son email avant de l'autoriser à se connecter. Cette logique s'applique uniquement aux connexions via "credentials" (identifiants, comme email/mot de passe). */
       if (account?.provider !== "credentials") return true;
       const existingUser = await getUserById(user.id as string);
       if (!existingUser?.emailVerified) return false;
@@ -31,6 +33,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
+      /**Personnalise les données de la session utilisateur. Ajoute les champs id et role à session.user, en se basant sur les informations du jeton JWT. */
       if (token.role && session.user) {
         session.user.role = token.role as UserRole;
       }
