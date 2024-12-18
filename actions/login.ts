@@ -1,6 +1,7 @@
 "use server";
 import { getUserByEmail } from "@/app/data/user";
 import { signIn } from "@/auth";
+import { sendVerificationEmail } from "@/lib/mail";
 import { generateVerificationToken } from "@/lib/tokens";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { LoginSchema } from "@/schemas";
@@ -17,7 +18,13 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     return { error: "User not found" };
   }
   if (!existingUser.emailVerified) {
-    await generateVerificationToken(existingUser.email);
+    const verificationToken = await generateVerificationToken(
+      existingUser.email
+    );
+    await sendVerificationEmail({
+      email: verificationToken.email,
+      token: verificationToken.token,
+    });
     return { success: "Confirmation email Sent" };
   }
   try {
