@@ -68,7 +68,6 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     }
   }
   try {
-    console.log(password);
     await signIn("credentials", {
       email,
       password,
